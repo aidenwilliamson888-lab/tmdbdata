@@ -61,6 +61,9 @@
   </header>
 
   <div class="container" id="movies"></div>
+  <div style="text-align:center; padding:1rem;">
+    <button id="loadMore">Load More</button>
+  </div>
 
   <script>
     const API_KEY = "3ed72f657ce5c5779383b2191d6d0111";
@@ -71,6 +74,7 @@
     const languageSelect = document.getElementById("languageSelect");
 
     let currentLanguage = localStorage.getItem("tmdb_lang") || "id-ID";
+    let currentPage = 1;
 
     async function loadLanguages() {
       try {
@@ -93,15 +97,26 @@
           languageSelect.appendChild(option);
         });
 
-        getPopularMovies();
+        getPopularMovies(true);
       } catch (err) {
         console.error("Gagal load bahasa:", err);
       }
     }
 
-    async function getPopularMovies() {
+    async function getPopularMovies(reset = false) {
       try {
-        const res = await fetch(`${BASE_URL}/movie/popular?api_key=${API_KEY}&language=${currentLanguage}`);
+        if (reset) {
+          currentPage = 1;
+          moviesContainer.innerHTML = "";
+        }
+
+        const res = await fetch(`${BASE_URL}/movie/popular?api_key=${API_KEY}&language=${currentLanguage}&page=${currentPage}`);
+        const data = await res.json();
+        showMovies(data.results);
+      } catch (err) {
+        console.error("Gagal load movie:", err);
+      }
+    }/movie/popular?api_key=${API_KEY}&language=${currentLanguage}`);
         const data = await res.json();
         showMovies(data.results);
       } catch (err) {
@@ -110,8 +125,6 @@
     }
 
     function showMovies(movies) {
-      moviesContainer.innerHTML = "";
-
       movies.forEach(movie => {
         const div = document.createElement("div");
         div.className = "movie";
@@ -126,12 +139,27 @@
 
         moviesContainer.appendChild(div);
       });
+    }" alt="${movie.title}">
+          <div class="info">
+            <h3>${movie.title}</h3>
+            <span>⭐ ${movie.vote_average}</span>
+          </div>
+        `;
+
+        moviesContainer.appendChild(div);
+      });
     }
 
     languageSelect.addEventListener("change", () => {
       currentLanguage = languageSelect.value;
       localStorage.setItem("tmdb_lang", currentLanguage);
+      getPopularMovies(true);
+    });
+
+    document.getElementById("loadMore").addEventListener("click", () => {
+      currentPage++;
       getPopularMovies();
+    });
     });
 
     loadLanguages();
